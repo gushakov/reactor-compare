@@ -7,6 +7,11 @@
     <groupId>ch.unil</groupId>
     <artifactId>reactor-compare</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <modules>
+        <module>mvc-tomcat</module>
+        <module>webflux-netty</module>
+        <module>common</module>
+    </modules>
     <packaging>pom</packaging>
 
     <parent>
