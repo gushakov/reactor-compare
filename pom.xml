@@ -31,18 +31,6 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>1.5.6.RELEASE</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>repackage</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>com.github.ferstl</groupId>
                 <artifactId>depgraph-maven-plugin</artifactId>
                 <version>2.2.0</version>
@@ -57,6 +45,7 @@
                     <printStyleConfiguration>true</printStyleConfiguration>
                     <customStyleConfiguration>classpath:depgraph-style.json</customStyleConfiguration>
                 </configuration>
+                <!--
                 <dependencies>
                     <dependency>
                         <groupId>ch.unil</groupId>
@@ -64,6 +53,7 @@
                         <version>1.0</version>
                     </dependency>
                 </dependencies>
+                -->
             </plugin>
         </plugins>
     </build>

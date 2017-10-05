@@ -11,6 +11,9 @@
 
     <artifactId>webflux-netty</artifactId>
 
+    <properties>
+        <start-class>ch.unil.reactor.compare.netty.NettySpringBootApplication</start-class>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>ch.unil</groupId>
