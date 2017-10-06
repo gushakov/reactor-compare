@@ -1,7 +1,8 @@
 ## Comparing Spring MVC + Tomcat with Spring Webflux (Reactor) + Netty
 
-This is a starter project for comparing implementation and performance of the two different stacks
-now available for Spring 5 platform.
+This is a starter project for comparing implementation and performance of the two different stacks now available 
+for Spring 5 platform.
+ 
  * The traditional stack: Spring MVC running on Tomcat
  * The reactive stack: Webflux (Reactor) running on Netty
  
@@ -37,8 +38,8 @@ Maven dependencies:
     <artifactId>httpclient</artifactId>
 </dependency>
 ````
-Notice that we are using the standard [HttpClient](https://hc.apache.org/httpcomponents-client-ga/) since for this kind of work
-we certainly need an HTTP client capable of managing a pool of connections.
+Notice that I'm using the standard [HttpClient](https://hc.apache.org/httpcomponents-client-ga/) since for this kind of work
+one would certainly need an HTTP client capable of managing a pool of connections.
 
 Controller:
 
@@ -80,11 +81,70 @@ public class MvcController {
 ````
 
 This code was designed to resemble in technical characteristics to the reactive one (see below) all the while keeping the
-customisations to the minimum. The interesting points are as follows.
+customizations to the minimum. The interesting points are as follows.
  
- 1. We use a default implementation of ``org.apache.http.impl.client.CloseableHttpClient`` with will in turn set up an
- instance of ``org.apache.http.impl.conn.PoolingHttpClientConnectionManager`` for us.
- 2. We need to parse the JSON returned by each call to Postman API. We use ``com.fasterxml.jackson.databind.ObjectMapper``
+ 1. I use a default implementation of ``org.apache.http.impl.client.CloseableHttpClient`` with will in turn set up an
+ instance of ``org.apache.http.impl.conn.PoolingHttpClientConnectionManager`` to perform connection pooling.
+ 2. I need to parse the JSON returned by each call to Postman API. For that I simply use ``com.fasterxml.jackson.databind.ObjectMapper``
  with a simple POJO for this purpose.
  3. The parallelism is implemented via a "work-stealing" ``java.util.concurrent.ExecutorService`` pooling as many threads
- as there are processors available.
+ as there are processors available. It needs to be explicitly configured to wait for all the threads to complete before
+ the results can be gathered for the final response.
+ 4. The results of the concurrent calls are collected into a shared instance of ``java.util.concurrent.ConcurrentHashMap``.
+ 
+ ### Webflux (Reactor) + Netty
+ 
+ Maven dependencies:
+ 
+ ````xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-webflux</artifactId>
+</dependency>
+```` 
+
+Notice that this single dependency is the only one we need as we are going to take advantage of the non-blocking
+``org.springframework.web.reactive.function.client.WebClient`` for performing HTTP connections.
+
+Controller:
+
+````java
+@Configuration
+public class ReactiveController {
+    private final WebClient postmanClient = WebClient.builder().baseUrl("https://postman-echo.com").build();
+
+    @Bean
+    public RouterFunction<ServerResponse> routerFunction() {
+        return route(GET("/parallel"),
+                request -> ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(parallel(), String.class))
+                ;
+    }
+
+    private Publisher<String> parallel() {
+        return Flux.range(1, 10)
+                .map(i -> Integer.toString(i))
+                .flatMap(this::postmanGet)
+                .log()
+                .collect(Collectors.joining());
+    }
+
+    private Mono<String> postmanGet(String value) {
+        return postmanClient.get()
+                .uri("/get?key=" + value)
+                .exchange()
+                .flatMap(response -> response
+                        .bodyToMono(PostmanGetResponse.class)
+                        .map(p -> p.getArgs().get("key").toString()))
+                ;
+    }
+}
+````
+
+The interesting points are as follows:
+
+1. I rely on the default implementation of ``org.springframework.web.reactive.function.client.WebClient`` to manage connection pooling.
+2. The parallelism comes from the use of [flatMap](https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Flux.html#flatMap-java.util.function.Function-)
+operator.
+3. The gathering of the results is done via ``collec()`` operator.
