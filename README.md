@@ -147,4 +147,11 @@ The interesting points are as follows:
 1. I rely on the default implementation of ``org.springframework.web.reactive.function.client.WebClient`` to manage connection pooling.
 2. The parallelism comes from the use of [flatMap](https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Flux.html#flatMap-java.util.function.Function-)
 operator.
-3. The gathering of the results is done via ``collec()`` operator.
+3. The gathering of the results is done via ``collect()`` operator.
+
+### Comparison
+
+Below are the screenshots of the JVM process inspection by JConsole of the respective Spring Boot applications: standard
+and reactive.
+
+![MVC + Tomcat](https://github.com/gushakov/reactor-compare/blob/master/standard.png)
