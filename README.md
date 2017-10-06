@@ -6,6 +6,10 @@ for Spring 5 platform.
  * The traditional stack: Spring MVC running on Tomcat
  * The reactive stack: Webflux (Reactor) running on Netty
  
+Obviously, and I am well aware of this, the implementation choices I have made are highly _opinionated_. There are several
+improvements which could be made for each stack. And this is exactly the point, this project is intended as a starting point
+to be forked and tweaked as appropriate for specific scenarios or measurements. 
+ 
 ### Use-case and implementation details 
  
 The idea was to take a simple use-case inspired by the one described in
@@ -19,7 +23,9 @@ as the endpoint to the external system.
 
 Particularly I was interested into the response time and the number of threads required by each setup.
 
+````text
 Note: the runtime is Spring Boot v. 2.0.0.M3 on JVM 1.8.0_141, Windows 7 (64 bit).  
+````
 
 Here are the implementation details for either stack.
 
@@ -38,8 +44,7 @@ Maven dependencies:
     <artifactId>httpclient</artifactId>
 </dependency>
 ````
-Notice that I'm using the standard [HttpClient](https://hc.apache.org/httpcomponents-client-ga/) since for this kind of work
-one would certainly need an HTTP client capable of managing a pool of connections.
+Notice that I'm using standard [HttpClient](https://hc.apache.org/httpcomponents-client-ga/) to manage a pool of HTTP connections.
 
 Controller:
 
@@ -167,6 +172,8 @@ With the following results for the total request times.
 | 4 | 0.515  | 0.156  |
 | 5 | 0.593  | 0.172  |
   
+Interestingly, using the standard sack the result seems to be always assembled in order: i.e. ``123456789``, where as using 
+reactive stack the results are assembled in random order: i.e. ``14251037698```.
 
 Below are the screenshots of the JConsole inspections of the applications.
 
@@ -177,3 +184,22 @@ _Standard_
 _Reactive_
 
 ![Reactor + Netty](https://github.com/gushakov/reactor-compare/blob/master/reactive.png)
+
+
+## Discussion
+
+Implementing the chosen use-case with the standard stack is a more involved (complicated) when comparing to the reactive stack. 
+Consider the following points:
+
+ 1. There is an explicit need to set up a dependency for ```httpclient```.
+ 2. Conversion from the JSON response from Postman API needs to be done manually (using Jackson ``com.fasterxml.jackson.databind.ObjectMapper``).
+ 3. Task executor needs to be set up explicitly for parallelism, which involves a choice among several options: fixed, cached, work-stealing pool.
+ Also one needs to be careful to shutdown the pool after all tasks were executed.
+ 4. Gathering results maybe tricky: one needs to explicitly share a (synchronized) container between the threads.
+ 5. In general there is more amount of code using the standard stack with imperative style versus the reactive stack using functional style of programming.
+ 
+Looking now at the performance of the two stacks (for **this simple use-case** only):
+
+ 1. Reactive stack is 3-4 times faster.
+ 2. The number of live threads is smaller when using the reactive stack (23), comparing to the standard stack (28, with periodic peaks to up to 36).
+ 3. Other parameters (memory usage, processor, number of classes loaded, size of the artifact) are almost the same. 

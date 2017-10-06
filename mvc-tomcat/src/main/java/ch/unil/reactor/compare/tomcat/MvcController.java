@@ -37,6 +37,8 @@ public class MvcController {
 
         // based on code from https://stackoverflow.com/a/1250655/8516495
 
+//        final ExecutorService taskExecutor = Executors.newFixedThreadPool(8);
+//        final ExecutorService taskExecutor = Executors.newCachedThreadPool();
         final ExecutorService taskExecutor = Executors.newWorkStealingPool();
 
         IntStream.range(1, 10).forEach(i -> taskExecutor.execute(() -> {
