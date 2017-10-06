@@ -149,9 +149,31 @@ The interesting points are as follows:
 operator.
 3. The gathering of the results is done via ``collect()`` operator.
 
-### Comparison
+### Performance analysis
 
-Below are the screenshots of the JVM process inspection by JConsole of the respective Spring Boot applications: standard
-and reactive.
+Once the two applications were up and running I've issued the following command for testing.
+
+````console
+$ curl -s -w "\n%{time_total}\n" http://localhost:9090/parallel
+````
+
+With the following results for the total request times.
+
+|Run|Standard|Reactive|
+|---|--------|--------|
+| 1 | 1.591  | 1.185  |
+| 2 | 0.515  | 0.171  |
+| 3 | 0.515  | 0.156  |
+| 4 | 0.515  | 0.156  |
+| 5 | 0.593  | 0.172  |
+  
+
+Below are the screenshots of the JConsole inspections of the applications.
+
+_Standard_
 
 ![MVC + Tomcat](https://github.com/gushakov/reactor-compare/blob/master/standard.png)
+
+_Reactive_
+
+![Reactor + Netty](https://github.com/gushakov/reactor-compare/blob/master/reactive.png)
